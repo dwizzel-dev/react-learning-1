@@ -110,15 +110,71 @@ class ClockButton extends React.Component {
 
 //--------------------------------------
 
+class ClickableButton extends React.Component {
+
+	constructor(props) {
+		super(props);
+		//properties
+		this.state = {
+			active: true,
+		};
+	}
+
+	//on the click of the button call the registered function passed has props args
+	onClick(){
+		this.setState({
+			active: !this.state.active,
+		})
+		if(this.props.onButtonClick){
+			this.props.onButtonClick();
+		}
+	}
+
+	//render the button	
+	render() {
+		return (
+			<div>
+				<button 
+					className={this.state.active ? "active" : ""}
+					onClick={() => this.onClick()}
+				>
+				{this.state.active ? 'Rendering' : 'No Render'}
+				</button>
+			</div>
+		);
+	}
+
+}
+//--------------------------------------
+
 class Clock extends React.Component {
+
 	constructor(props) {
 		super(props);
 		this.state = {
+			render: true,
 			paused: true,
 			counter: 0,
 			date: new Date()
 		};
 		this.timerID = 0;
+		this.freq = 100;
+	}
+
+	//tell to re-render only if set to render true
+	shouldComponentUpdate(nextProps, nextState){
+		if(!this.state.render){
+			return false;
+		}
+		return true;
+	}
+	
+
+	//pause the rendering of the view
+	pauseRendering(){
+		this.setState({
+			render: !this.state.render,
+		});
 	}
 
 	//on compoenent is loaded
@@ -134,17 +190,16 @@ class Clock extends React.Component {
 	//jus ticking
 	tick() {
 		this.setState({
-			counter: this.state.counter + 1,
+			counter: this.state.counter + (this.freq/1000),
 			date: new Date()
 		});
 	}
 
 	//that function can be called by another component by passing it
 	startStopClock(status){
-		console.log(`change clock state: ${status}`)
 		if(this.state.paused && status){
 			//restart the timer
-			this.timerID = setInterval(() => this.tick(), 1000);
+			this.timerID = setInterval(() => this.tick(), this.freq);
 			this.setState({paused: false})
 		}else{
 			//stop the timer
@@ -155,18 +210,22 @@ class Clock extends React.Component {
 
 	//the clock rendering
 	render() {
-		const counter = this.state.counter;
+		const counter = Number.parseFloat(this.state.counter).toFixed(2);
 		return (
 			<div>
 				<h1>{this.state.date.toLocaleTimeString()}</h1>
 				{/* the progress bar use the counter props to render the new state */}
 				<ProgressBar counter={counter} />
 				<p>
-					running for <b>{counter} seconds</b>
+					Running for <b>{counter} seconds</b>
 				</p>
 				<div>
 					{/* the clock button call a methos from within this compoenent */}
 					<ClockButton name="The Clock is" onButtonClick={this.startStopClock.bind(this)} />
+				</div>
+				<div>
+					{/* the clock button call a methos from within this compoenent */}
+					<ClickableButton onButtonClick={this.pauseRendering.bind(this)} />
 				</div>
 			</div>
 		);
